@@ -69,7 +69,7 @@
     <h1 id="intro-title"></h1>
     <p>Você verá contas de <span id="intro-type"></span>. Seu objetivo é escolher a resposta correta que representa a conta exibida.</p>
     <p>São 20 níveis com dificuldade crescente.</p>
-    <p>Acertos valem +10 pontos e erros -1 ponto.</p>
+    <p>Acertos valem +1 pontos e erros -1 ponto.</p>
     <button onclick="iniciarJogo()">Começar</button>
   </div>
 
@@ -104,7 +104,7 @@
     }
 
     function gerarNumeroAleatorio() {
-      return Math.floor(Math.random() * 900) + 100; // número entre 100 e 999
+      return Math.floor(Math.random() * 90) + 10; // número entre 10 e 99
     }
 
     function gerarPergunta() {
