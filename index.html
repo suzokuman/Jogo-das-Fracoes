@@ -5,17 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Jogo das Frações</title>
   <style>
+    /* Estilos gerais da página */
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       background-color: #f0f8ff;
     }
+
     h1 {
       margin-top: 20px;
     }
+
     .hidden {
       display: none;
     }
+
+    /* Estilo da "pizza" que representa a fração */
     .pizza {
       width: 200px;
       height: 200px;
@@ -24,6 +29,8 @@
       position: relative;
       border: 4px solid #cc0000;
     }
+
+    /* Área onde a fração deve ser solta */
     .drop-zone {
       margin-top: 20px;
       padding: 20px;
@@ -34,6 +41,8 @@
       margin: 0 auto 20px;
       transition: background-color 0.3s ease;
     }
+
+    /* Estilo das frações que o jogador arrasta */
     .fraction {
       display: inline-block;
       margin: 30px;
@@ -46,35 +55,44 @@
       transform: scale(1.5);
       transition: transform 0.2s ease, background-color 0.2s ease;
     }
+
     .fraction:hover {
       transform: scale(1.6);
     }
+
     .fraction .numerator {
       display: block;
       border-bottom: 1px solid #000;
     }
+
     .fraction .denominator {
       display: block;
     }
+
     .correct {
       background-color: #90ee90 !important;
     }
+
     .wrong {
       background-color: #f08080 !important;
     }
+
     #score-board {
       margin-top: 10px;
       font-size: 18px;
     }
+
     button {
       padding: 10px 20px;
       font-size: 16px;
       margin-top: 20px;
       cursor: pointer;
     }
+
     .shake {
       animation: shake 0.4s;
     }
+
     @keyframes shake {
       0% { transform: translateX(0); }
       25% { transform: translateX(-5px); }
@@ -85,6 +103,7 @@
   </style>
 </head>
 <body>
+  <!-- Tela inicial com instruções -->
   <div id="start-screen">
     <h1>Bem-vindo ao Jogo das Frações!</h1>
     <p>Você verá uma pizza dividida em partes. Seu objetivo é arrastar a fração correta que representa a parte pintada.</p>
@@ -92,6 +111,7 @@
     <button onclick="startGame()">Começar</button>
   </div>
 
+  <!-- Tela do jogo -->
   <div id="game-screen" class="hidden">
     <h1>Jogo das Frações</h1>
     <div id="level-info">Nível 1 de 20</div>
@@ -101,9 +121,17 @@
       Solte aqui a fração correta
     </div>
     <div id="fractions"></div>
-    <button onclick="nextLevel()" class="hidden" id="nextButton">Próximo Nível</button>
   </div>
 
+  <!-- Tela final -->
+  <div id="end-screen" class="hidden">
+    <h1>Parabéns!</h1>
+    <p>Você completou todos os 20 níveis do Jogo das Frações.</p>
+    <p>Sua pontuação final foi: <strong id="final-score"></strong></p>
+    <button onclick="location.reload()">Jogar Novamente</button>
+  </div>
+
+  <!-- Áudios de acerto e erro -->
   <audio id="sound-correct">
     <source src="./correct-6033(1).mp3" type="audio/mpeg">
   </audio>
@@ -117,7 +145,8 @@
     const fractionsContainer = document.getElementById("fractions");
     const levelInfo = document.getElementById("level-info");
     const scoreBoard = document.getElementById("score-board");
-    const nextButton = document.getElementById("nextButton");
+    const endScreen = document.getElementById("end-screen");
+    const finalScore = document.getElementById("final-score");
 
     const soundCorrect = document.getElementById("sound-correct");
     const soundWrong = document.getElementById("sound-wrong");
@@ -140,7 +169,6 @@
       const fraction = levels[currentLevel];
       levelInfo.textContent = `Nível ${currentLevel + 1} de 20`;
       scoreBoard.textContent = `Pontuação: ${score}`;
-      nextButton.classList.add("hidden");
       dropZone.textContent = "Solte aqui a fração correta";
       dropZone.classList.remove("correct", "wrong", "shake");
       pizza.style.background = generatePizzaGradient(fraction);
@@ -159,6 +187,7 @@
         div.addEventListener("dragstart", (e) => {
           e.dataTransfer.setData("text/plain", value);
         });
+
         fractionsContainer.appendChild(div);
       });
     }
@@ -192,29 +221,35 @@
         dropZone.innerHTML = `Correto! A fração é:<br><span class='fraction correct'><span class='numerator'>${value.split("/")[0]}</span><span class='denominator'>${value.split("/")[1]}</span></span>`;
         dropZone.classList.add("correct");
         soundCorrect.currentTime = 0;
-        soundCorrect.play();
+        soundCorrect.play().catch(e => console.warn("Som bloqueado:", e));
         score += 10;
         scoreBoard.textContent = `Pontuação: ${score}`;
-        nextButton.classList.remove("hidden");
+
+        setTimeout(() => {
+          currentLevel++;
+          if (currentLevel < levels.length) {
+            loadLevel();
+          } else {
+            endGame();
+          }
+        }, 1000);
+
       } else {
         dropZone.innerHTML = `Incorreto. Tente novamente.`;
         dropZone.classList.add("wrong", "shake");
         soundWrong.currentTime = 0;
-        soundWrong.play();
+        soundWrong.play().catch(e => console.warn("Som bloqueado:", e));
         score -= 1;
         scoreBoard.textContent = `Pontuação: ${score}`;
       }
     });
 
-    function nextLevel() {
-      currentLevel++;
-      if (currentLevel < levels.length) {
-        loadLevel();
-      } else {
-        alert(`Parabéns! Você completou todos os níveis. Pontuação final: ${score}`);
-        location.reload();
-      }
+    function endGame() {
+      document.getElementById("game-screen").classList.add("hidden");
+      endScreen.classList.remove("hidden");
+      finalScore.textContent = `${score} pontos`;
     }
   </script>
 </body>
 </html>
+
