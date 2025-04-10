@@ -7,124 +7,193 @@
   <style>
     body {
       font-family: Arial, sans-serif;
+      background-color: #f0f8ff;
       text-align: center;
-      background-color: #fff8dc;
+      padding: 30px;
     }
     h1 {
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 20px;
+      margin: 10px 0;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 20px;
       margin-top: 20px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 10px;
     }
-    .question {
-      font-size: 28px;
-      margin: 40px 0;
+    #question {
+      font-size: 36px;
+      margin-bottom: 20px;
     }
-    .options button {
+    .option {
+      display: block;
+      margin: 20px auto;
       padding: 15px 30px;
       font-size: 24px;
-      margin: 20px;
+      width: 300px;
       cursor: pointer;
-      min-width: 200px;
+      background-color: #e0e0e0;
+      border: none;
+      border-radius: 10px;
+      transition: background-color 0.3s ease;
+    }
+    .option:hover {
+      background-color: #ccc;
     }
     .correct {
-      background-color: lightgreen;
+      background-color: #4CAF50 !important;
+      color: white;
     }
-    .wrong {
-      background-color: lightcoral;
+    .incorrect {
+      background-color: #f44336 !important;
+      color: white;
     }
-    .score {
-      margin-top: 20px;
+    #score {
       font-size: 20px;
+      margin-top: 20px;
+    }
+    #intro {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <h1 id="titulo"></h1>
-  <div class="score">Score: <span id="score">0</span></div>
-  <div class="question" id="question"></div>
-  <div class="options" id="options"></div>
+  <div id="intro">
+    <h1 id="intro-title"></h1>
+    <p>Você verá contas de <span id="intro-type"></span>. Seu objetivo é escolher a resposta correta que representa a conta exibida.</p>
+    <p>São 20 níveis com dificuldade crescente.</p>
+    <p>Acertos valem +10 pontos e erros -1 ponto.</p>
+    <button onclick="iniciarJogo()">Começar</button>
+  </div>
+
+  <div id="jogo" style="display: none">
+    <h1>Jogo de Aritmética</h1>
+    <div id="question"></div>
+    <div id="options"></div>
+    <div id="score">Pontuação: <span id="score-value">0</span></div>
+  </div>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const tipo = params.get('tipo');
-    document.getElementById('titulo').innerText = 'Jogo de ' + tipo.charAt(0).toUpperCase() + tipo.slice(1);
-
-    let score = 0;
+    const urlParams = new URLSearchParams(window.location.search);
+    const tipo = urlParams.get("tipo") || "soma";
     let nivel = 1;
+    let score = 0;
 
-    function gerarNumero(dificuldade) {
-      if (tipo === 'multiplicacao') {
-        return (Math.random() * Math.pow(10, dificuldade)).toFixed(Math.floor(Math.random() * 3));
-      } else {
-        return (Math.random() * Math.pow(10, dificuldade)).toFixed(Math.floor(Math.random() * 3 + 2));
-      }
+    const tiposTexto = {
+      soma: "Soma",
+      subtracao: "Subtração",
+      multiplicacao: "Multiplicação",
+      divisao: "Divisão"
+    };
+
+    document.getElementById("intro-title").textContent = `Bem-vindo ao Jogo da ${tiposTexto[tipo]}`;
+    document.getElementById("intro-type").textContent = tiposTexto[tipo];
+    document.getElementById("intro").style.display = "block";
+
+    function iniciarJogo() {
+      document.getElementById("intro").style.display = "none";
+      document.getElementById("jogo").style.display = "block";
+      exibirPergunta();
     }
 
-    function gerarQuestao() {
-      document.getElementById('options').innerHTML = '';
-      const dif = Math.min(1 + Math.floor(nivel / 5), 4);
-      let n1 = parseFloat(gerarNumero(dif));
-      let n2 = parseFloat(gerarNumero(dif));
-      let pergunta = '';
-      let respostaCorreta;
+    function gerarNumeroAleatorio() {
+      return Math.floor(Math.random() * 900) + 100; // número entre 100 e 999
+    }
 
-      switch(tipo) {
-        case 'soma':
-          pergunta = `${n1} + ${n2}`;
-          respostaCorreta = (n1 + n2).toFixed(2);
+    function gerarPergunta() {
+      let a = gerarNumeroAleatorio();
+      let b = gerarNumeroAleatorio();
+      let pergunta = "";
+      let respostaCorreta = 0;
+
+      switch (tipo) {
+        case "soma":
+          respostaCorreta = a + b;
+          pergunta = `${a} + ${b}`;
           break;
-        case 'subtracao':
-          pergunta = `${n1} - ${n2}`;
-          respostaCorreta = (n1 - n2).toFixed(2);
+        case "subtracao":
+          if (a < b) [a, b] = [b, a];
+          respostaCorreta = a - b;
+          pergunta = `${a} - ${b}`;
           break;
-        case 'multiplicacao':
-          pergunta = `${n1} × ${n2}`;
-          respostaCorreta = (n1 * n2).toFixed(2);
+        case "multiplicacao":
+          a = Math.floor(Math.random() * 90) + 10;
+          b = Math.floor(Math.random() * 9) + 1;
+          respostaCorreta = a * b;
+          pergunta = `${a} × ${b}`;
           break;
-        case 'divisao':
-          n2 = n2 === 0 ? 1 : n2;
-          pergunta = `${n1} ÷ ${n2}`;
-          respostaCorreta = (n1 / n2).toFixed(2);
+        case "divisao":
+          b = Math.floor(Math.random() * 9) + 1;
+          respostaCorreta = Math.floor(Math.random() * 90) + 10;
+          a = respostaCorreta * b;
+          pergunta = `${a} ÷ ${b}`;
           break;
       }
 
-      document.getElementById('question').innerText = pergunta;
+      return { pergunta, respostaCorreta };
+    }
 
-      const respostas = new Set([respostaCorreta]);
-      while (respostas.size < 5) {
-        let erro = (parseFloat(respostaCorreta) + (Math.random() * 10 - 5)).toFixed(2);
-        respostas.add(erro);
+    function gerarOpcoes(respostaCorreta) {
+      const opcoes = new Set();
+      opcoes.add(respostaCorreta);
+      while (opcoes.size < 5) {
+        let desvio = Math.floor(Math.random() * 21) - 10;
+        let alternativa = respostaCorreta + desvio;
+        if (alternativa >= 0) opcoes.add(alternativa);
+      }
+      return Array.from(opcoes).sort(() => Math.random() - 0.5);
+    }
+
+    function exibirPergunta() {
+      if (nivel > 20) {
+        window.location.href = `fim.html?score=${score}`;
+        return;
       }
 
-      Array.from(respostas)
-        .sort(() => Math.random() - 0.5)
-        .forEach(resp => {
-          const btn = document.createElement('button');
-          btn.textContent = resp;
-          btn.onclick = () => verificarResposta(resp, respostaCorreta, btn);
-          document.getElementById('options').appendChild(btn);
-        });
+      const q = gerarPergunta();
+      const opcoes = gerarOpcoes(q.respostaCorreta);
+      document.getElementById("question").textContent = `Nível ${nivel}: ${q.pergunta}`;
+      const container = document.getElementById("options");
+      container.innerHTML = "";
+
+      opcoes.forEach(opcao => {
+        const btn = document.createElement("button");
+        btn.className = "option";
+        btn.textContent = opcao;
+        btn.onclick = () => verificarResposta(opcao, q.respostaCorreta, btn);
+        container.appendChild(btn);
+      });
     }
 
     function verificarResposta(selecionada, correta, botao) {
+      const botoes = document.querySelectorAll(".option");
+      botoes.forEach(btn => btn.disabled = true);
+
       if (selecionada === correta) {
-        botao.classList.add('correct');
+        botao.classList.add("correct");
         score += 10;
-        document.getElementById('score').innerText = score;
+        document.getElementById("score-value").textContent = score;
         setTimeout(() => {
-          if (nivel < 20) {
-            nivel++;
-            gerarQuestao();
-          } else {
-            window.location.href = `fim.html?score=${score}`;
-          }
+          nivel++;
+          exibirPergunta();
         }, 1000);
       } else {
-        botao.classList.add('wrong');
-        score = Math.max(0, score - 1);
-        document.getElementById('score').innerText = score;
+        botao.classList.add("incorrect");
+        score -= 1;
+        document.getElementById("score-value").textContent = score;
+        setTimeout(() => {
+          botoes.forEach(btn => btn.disabled = false);
+          botao.classList.remove("incorrect");
+        }, 1000);
       }
     }
-
-    gerarQuestao();
   </script>
 </body>
 </html>
