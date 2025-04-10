@@ -1,199 +1,211 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Jogo de Aritmética</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f0f8ff;
       text-align: center;
-      padding: 30px;
+      background-color: #f0f8ff;
     }
     h1 {
-      margin-bottom: 20px;
-    }
-    p {
-      font-size: 20px;
-      margin: 10px 0;
-    }
-    button {
-      padding: 12px 24px;
-      font-size: 20px;
       margin-top: 20px;
-      cursor: pointer;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 10px;
     }
-    #question {
-      font-size: 36px;
-      margin-bottom: 20px;
+    .hidden {
+      display: none;
+    }
+    .drop-zone {
+      margin-top: 20px;
+      padding: 20px;
+      border: 2px dashed #666;
+      min-height: 50px;
+      background-color: #fff;
+      width: 300px;
+      margin: 0 auto 20px;
     }
     .option {
-      display: block;
-      margin: 20px auto;
-      padding: 15px 30px;
+      display: inline-block;
+      padding: 10px 15px;
+      margin: 20px;
+      background-color: #99ccff;
+      color: #000;
       font-size: 24px;
-      width: 300px;
-      cursor: pointer;
-      background-color: #e0e0e0;
-      border: none;
       border-radius: 10px;
-      transition: background-color 0.3s ease;
-    }
-    .option:hover {
-      background-color: #ccc;
+      cursor: grab;
+      transform: scale(1.5);
     }
     .correct {
-      background-color: #4CAF50 !important;
-      color: white;
+      background-color: #90ee90 !important;
     }
-    .incorrect {
-      background-color: #f44336 !important;
-      color: white;
+    .wrong {
+      background-color: #f08080 !important;
     }
-    #score {
-      font-size: 20px;
-      margin-top: 20px;
-    }
-    #intro {
-      display: none;
+    #score-board {
+      margin-top: 10px;
+      font-size: 18px;
     }
   </style>
 </head>
 <body>
-  <div id="intro">
-    <h1 id="intro-title"></h1>
-    <p>Você verá contas de <span id="intro-type"></span>. Seu objetivo é escolher a resposta correta que representa a conta exibida.</p>
-    <p>São 20 níveis com dificuldade crescente.</p>
-    <p>Acertos valem +1 pontos e erros -1 ponto.</p>
-    <button onclick="iniciarJogo()">Começar</button>
+  <!-- Tela de boas-vindas -->
+  <div id="start-screen">
+    <h1>Bem-vindo ao Jogo de Aritmética!</h1>
+    <p>Você verá contas de matemática. Arraste a resposta correta para o quadro.</p>
+    <p>São 20 níveis com dificuldade crescente. Acertos valem <strong>+1 ponto</strong> e erros <strong>-1 ponto</strong>.</p>
+    <button onclick="startGame()">Começar</button>
   </div>
 
-  <div id="jogo" style="display: none">
-    <h1>Jogo de Aritmética</h1>
-    <div id="question"></div>
+  <!-- Tela do jogo -->
+  <div id="game-screen" class="hidden">
+    <h1 id="mode-title"></h1>
+    <div id="level-info"></div>
+    <div id="score-board">Pontuação: 0</div>
+    <div id="problem" style="font-size: 32px; margin: 20px;"></div>
+    <div class="drop-zone" id="dropZone">Solte aqui a resposta correta</div>
     <div id="options"></div>
-    <div id="score">Pontuação: <span id="score-value">0</span></div>
   </div>
+
+  <!-- Áudios -->
+  <audio id="correctSound" src="./correto.mp3"></audio>
+  <audio id="wrongSound" src="./errado.mp3"></audio>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const tipo = urlParams.get("tipo") || "soma";
-    let nivel = 1;
+    // Variáveis do jogo
+    let currentLevel = 0;
     let score = 0;
+    const maxLevels = 20;
+    let operationType = "soma";
 
-    const tiposTexto = {
-      soma: "Soma",
-      subtracao: "Subtração",
-      multiplicacao: "Multiplicação",
-      divisao: "Divisão"
-    };
+    // Elementos do DOM
+    const startScreen = document.getElementById("start-screen");
+    const gameScreen = document.getElementById("game-screen");
+    const problemElement = document.getElementById("problem");
+    const optionsContainer = document.getElementById("options");
+    const dropZone = document.getElementById("dropZone");
+    const levelInfo = document.getElementById("level-info");
+    const scoreBoard = document.getElementById("score-board");
+    const correctSound = document.getElementById("correctSound");
+    const wrongSound = document.getElementById("wrongSound");
+    const modeTitle = document.getElementById("mode-title");
 
-    document.getElementById("intro-title").textContent = `Bem-vindo ao Jogo da ${tiposTexto[tipo]}`;
-    document.getElementById("intro-type").textContent = tiposTexto[tipo];
-    document.getElementById("intro").style.display = "block";
-
-    function iniciarJogo() {
-      document.getElementById("intro").style.display = "none";
-      document.getElementById("jogo").style.display = "block";
-      exibirPergunta();
+    // Iniciar jogo
+    function startGame() {
+      const params = new URLSearchParams(window.location.search);
+      operationType = params.get("tipo") || "soma";
+      modeTitle.textContent = `Modo: ${capitalize(operationType)}`;
+      startScreen.classList.add("hidden");
+      gameScreen.classList.remove("hidden");
+      loadLevel();
     }
 
-    function gerarNumeroAleatorio() {
-      return Math.floor(Math.random() * 90) + 10; // número entre 10 e 99
-    }
+    // Carrega o nível atual
+    function loadLevel() {
+      const digits = currentLevel < 5 ? 1 : currentLevel < 10 ? 2 : currentLevel < 15 ? 3 : 4;
+      const num1 = generateNumber(digits);
+      const num2 = generateNumber(digits);
+      const correct = calculate(num1, num2, operationType);
 
-    function gerarPergunta() {
-      let a = gerarNumeroAleatorio();
-      let b = gerarNumeroAleatorio();
-      let pergunta = "";
-      let respostaCorreta = 0;
+      levelInfo.textContent = `Nível ${currentLevel + 1} de ${maxLevels}`;
+      scoreBoard.textContent = `Pontuação: ${score}`;
+      dropZone.textContent = "Solte aqui a resposta correta";
+      dropZone.classList.remove("correct", "wrong");
+      problemElement.textContent = `${num1} ${getSymbol(operationType)} ${num2}`;
 
-      switch (tipo) {
-        case "soma":
-          respostaCorreta = a + b;
-          pergunta = `${a} + ${b}`;
-          break;
-        case "subtracao":
-          if (a < b) [a, b] = [b, a];
-          respostaCorreta = a - b;
-          pergunta = `${a} - ${b}`;
-          break;
-        case "multiplicacao":
-          a = Math.floor(Math.random() * 90) + 10;
-          b = Math.floor(Math.random() * 9) + 1;
-          respostaCorreta = a * b;
-          pergunta = `${a} × ${b}`;
-          break;
-        case "divisao":
-          b = Math.floor(Math.random() * 9) + 1;
-          respostaCorreta = Math.floor(Math.random() * 90) + 10;
-          a = respostaCorreta * b;
-          pergunta = `${a} ÷ ${b}`;
-          break;
-      }
-
-      return { pergunta, respostaCorreta };
-    }
-
-    function gerarOpcoes(respostaCorreta) {
-      const opcoes = new Set();
-      opcoes.add(respostaCorreta);
-      while (opcoes.size < 5) {
-        let desvio = Math.floor(Math.random() * 21) - 10;
-        let alternativa = respostaCorreta + desvio;
-        if (alternativa >= 0) opcoes.add(alternativa);
-      }
-      return Array.from(opcoes).sort(() => Math.random() - 0.5);
-    }
-
-    function exibirPergunta() {
-      if (nivel > 20) {
-        window.location.href = `fim.html?score=${score}`;
-        return;
-      }
-
-      const q = gerarPergunta();
-      const opcoes = gerarOpcoes(q.respostaCorreta);
-      document.getElementById("question").textContent = `Nível ${nivel}: ${q.pergunta}`;
-      const container = document.getElementById("options");
-      container.innerHTML = "";
-
-      opcoes.forEach(opcao => {
-        const btn = document.createElement("button");
-        btn.className = "option";
-        btn.textContent = opcao;
-        btn.onclick = () => verificarResposta(opcao, q.respostaCorreta, btn);
-        container.appendChild(btn);
+      const options = generateOptions(correct);
+      optionsContainer.innerHTML = "";
+      options.forEach(value => {
+        const div = document.createElement("div");
+        div.className = "option";
+        div.textContent = value;
+        div.setAttribute("draggable", "true");
+        div.dataset.value = value;
+        div.addEventListener("dragstart", (e) => {
+          e.dataTransfer.setData("text/plain", value);
+        });
+        optionsContainer.appendChild(div);
       });
     }
 
-    function verificarResposta(selecionada, correta, botao) {
-      const botoes = document.querySelectorAll(".option");
-      botoes.forEach(btn => btn.disabled = true);
+    // Gera número com n dígitos
+    function generateNumber(digits) {
+      const min = Math.pow(10, digits - 1);
+      const max = Math.pow(10, digits) - 1;
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
 
-      if (selecionada === correta) {
-        botao.classList.add("correct");
-        score += 10;
-        document.getElementById("score-value").textContent = score;
-        setTimeout(() => {
-          nivel++;
-          exibirPergunta();
-        }, 1000);
-      } else {
-        botao.classList.add("incorrect");
-        score -= 1;
-        document.getElementById("score-value").textContent = score;
-        setTimeout(() => {
-          botoes.forEach(btn => btn.disabled = false);
-          botao.classList.remove("incorrect");
-        }, 1000);
+    // Retorna símbolo da operação
+    function getSymbol(tipo) {
+      switch (tipo) {
+        case "soma": return "+";
+        case "subtracao": return "-";
+        case "multiplicacao": return "×";
+        case "divisao": return "÷";
       }
+    }
+
+    // Calcula a resposta correta
+    function calculate(a, b, tipo) {
+      switch (tipo) {
+        case "soma": return a + b;
+        case "subtracao": return a - b;
+        case "multiplicacao": return a * b;
+        case "divisao": return Math.floor(a / b);
+      }
+    }
+
+    // Gera 5 opções (1 correta + 4 erradas)
+    function generateOptions(correct) {
+      const options = new Set([correct]);
+      while (options.size < 5) {
+        const offset = Math.floor(Math.random() * 10) + 1;
+        options.add(correct + (Math.random() < 0.5 ? offset : -offset));
+      }
+      return Array.from(options).sort(() => Math.random() - 0.5);
+    }
+
+    // Eventos de arrastar e soltar
+    dropZone.addEventListener("dragover", (e) => e.preventDefault());
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const value = parseInt(e.dataTransfer.getData("text/plain"));
+      const [num1, num2] = problemElement.textContent.split(/\D+/).map(Number);
+      const correct = calculate(num1, num2, operationType);
+
+      dropZone.classList.remove("correct", "wrong");
+
+      if (value === correct) {
+        dropZone.textContent = `Correto! Resposta: ${value}`;
+        dropZone.classList.add("correct");
+        correctSound.play();
+        score++;
+        setTimeout(() => nextLevel(), 1200);
+      } else {
+        dropZone.textContent = `Incorreto. Tente novamente.`;
+        dropZone.classList.add("wrong");
+        wrongSound.play();
+        score--;
+        scoreBoard.textContent = `Pontuação: ${score}`;
+      }
+    });
+
+    // Vai para o próximo nível ou finaliza
+    function nextLevel() {
+      currentLevel++;
+      if (currentLevel < maxLevels) {
+        loadLevel();
+      } else {
+        alert(`Parabéns! Você completou todos os níveis. Pontuação final: ${score}`);
+        location.reload();
+      }
+    }
+
+    // Capitaliza primeira letra
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
     }
   </script>
 </body>
 </html>
+
