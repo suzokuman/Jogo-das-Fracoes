@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo de Aritmética</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #fff8dc;
+    }
+    h1 {
+      margin-top: 20px;
+    }
+    .question {
+      font-size: 28px;
+      margin: 40px 0;
+    }
+    .options button {
+      padding: 15px 30px;
+      font-size: 24px;
+      margin: 20px;
+      cursor: pointer;
+      min-width: 200px;
+    }
+    .correct {
+      background-color: lightgreen;
+    }
+    .wrong {
+      background-color: lightcoral;
+    }
+    .score {
+      margin-top: 20px;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="titulo"></h1>
+  <div class="score">Score: <span id="score">0</span></div>
+  <div class="question" id="question"></div>
+  <div class="options" id="options"></div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const tipo = params.get('tipo');
+    document.getElementById('titulo').innerText = 'Jogo de ' + tipo.charAt(0).toUpperCase() + tipo.slice(1);
+
+    let score = 0;
+    let nivel = 1;
+
+    function gerarNumero(dificuldade) {
+      if (tipo === 'multiplicacao') {
+        return (Math.random() * Math.pow(10, dificuldade)).toFixed(Math.floor(Math.random() * 3));
+      } else {
+        return (Math.random() * Math.pow(10, dificuldade)).toFixed(Math.floor(Math.random() * 3 + 2));
+      }
+    }
+
+    function gerarQuestao() {
+      document.getElementById('options').innerHTML = '';
+      const dif = Math.min(1 + Math.floor(nivel / 5), 4);
+      let n1 = parseFloat(gerarNumero(dif));
+      let n2 = parseFloat(gerarNumero(dif));
+      let pergunta = '';
+      let respostaCorreta;
+
+      switch(tipo) {
+        case 'soma':
+          pergunta = `${n1} + ${n2}`;
+          respostaCorreta = (n1 + n2).toFixed(2);
+          break;
+        case 'subtracao':
+          pergunta = `${n1} - ${n2}`;
+          respostaCorreta = (n1 - n2).toFixed(2);
+          break;
+        case 'multiplicacao':
+          pergunta = `${n1} × ${n2}`;
+          respostaCorreta = (n1 * n2).toFixed(2);
+          break;
+        case 'divisao':
+          n2 = n2 === 0 ? 1 : n2;
+          pergunta = `${n1} ÷ ${n2}`;
+          respostaCorreta = (n1 / n2).toFixed(2);
+          break;
+      }
+
+      document.getElementById('question').innerText = pergunta;
+
+      const respostas = new Set([respostaCorreta]);
+      while (respostas.size < 5) {
+        let erro = (parseFloat(respostaCorreta) + (Math.random() * 10 - 5)).toFixed(2);
+        respostas.add(erro);
+      }
+
+      Array.from(respostas)
+        .sort(() => Math.random() - 0.5)
+        .forEach(resp => {
+          const btn = document.createElement('button');
+          btn.textContent = resp;
+          btn.onclick = () => verificarResposta(resp, respostaCorreta, btn);
+          document.getElementById('options').appendChild(btn);
+        });
+    }
+
+    function verificarResposta(selecionada, correta, botao) {
+      if (selecionada === correta) {
+        botao.classList.add('correct');
+        score += 10;
+        document.getElementById('score').innerText = score;
+        setTimeout(() => {
+          if (nivel < 20) {
+            nivel++;
+            gerarQuestao();
+          } else {
+            window.location.href = `fim.html?score=${score}`;
+          }
+        }, 1000);
+      } else {
+        botao.classList.add('wrong');
+        score = Math.max(0, score - 1);
+        document.getElementById('score').innerText = score;
+      }
+    }
+
+    gerarQuestao();
+  </script>
+</body>
+</html>
