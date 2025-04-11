@@ -92,7 +92,15 @@
     </div>
     <div id="fractions"></div>
   </div>
-
+  
+ <!-- Tela final --> 
+  <div id="end-screen" class="hidden">
+     <h1>Parabéns!</h1>
+     <p>Você completou todos os 20 níveis do Jogo das Frações.</p>
+     <p>Sua pontuação final foi: <strong id="final-score"></strong></p>
+     <button onclick="location.reload()">Jogar Novamente</button>
+   </div>
+  
   <!-- Áudio de feedback -->
   <audio id="correctSound" src="./correto.mp3"></audio>
   <audio id="wrongSound" src="./errado.mp3"></audio>
@@ -200,6 +208,11 @@
         scoreBoard.textContent = `Pontuação: ${score}`;
       }
     });
+    function endGame() { 
+      document.getElementById("game-screen").classList.add("hidden");
+       endScreen.classList.remove("hidden");
+       finalScore.textContent = `${score} pontos`;
+     }
   </script>
 </body>
 </html>
