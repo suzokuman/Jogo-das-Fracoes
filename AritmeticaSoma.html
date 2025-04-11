@@ -67,6 +67,14 @@
     <div id="options"></div>
   </div>
 
+  <!-- Tela final -->
+   <div id="end-screen" class="hidden">
+     <h1>Parabéns!</h1>
+     <p>Você completou todos os 20 níveis do Jogo das Frações.</p>
+     <p>Sua pontuação final foi: <strong id="final-score"></strong></p>
+     <button onclick="location.reload()">Jogar Novamente</button>
+   </div>
+
   <!-- Áudios -->
   <audio id="correctSound" src="./correto.mp3"></audio>
   <audio id="wrongSound" src="./errado.mp3"></audio>
@@ -205,6 +213,11 @@
     function capitalize(str) {
       return str.charAt(0).toUpperCase() + str.slice(1);
     }
+       function endGame() { 
+      document.getElementById("game-screen").classList.add("hidden");
+       endScreen.classList.remove("hidden");
+       finalScore.textContent = `${score} pontos`;
+     }
   </script>
 </body>
 </html>
